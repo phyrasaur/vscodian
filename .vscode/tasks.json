@@ -5,8 +5,8 @@
 	"tasks": [
 		{
             "label": "dev",
-            "type": "npm",
-            "script": "dev",
+            "type": "shell",
+            "command": "pnpm run dev",
             "group": "build",
 			"isBackground": true,
 			"problemMatcher": [

@@ -1,5 +1,5 @@
 const { build, context } = require("esbuild")
-const { resolve } = require("path")
+const { dirname, resolve } = require("path")
 const { existsSync } = require("fs")
 const { copy } = require("esbuild-plugin-copy")
 const isProd = process.argv.indexOf('--mode=production') >= 0;
@@ -66,8 +66,9 @@ async function main() {
 
 async function createLib() {
     const points = dependencies.reduce((point, dependency) => {
-        const main = require(`./node_modules/${dependency}/package.json`).main ?? "index.js";
-        const mainAbsPath = resolve(`./node_modules/${dependency}`, main);
+        const packageJsonPath = require.resolve(`${dependency}/package.json`);
+        const main = require(packageJsonPath).main ?? "index.js";
+        const mainAbsPath = resolve(dirname(packageJsonPath), main);
         if (existsSync(mainAbsPath)) {
             point[dependency] = mainAbsPath;
         }
