@@ -9,6 +9,7 @@ import * as vscode from 'vscode';
 import { Holder } from './markdown/holder';
 import { convertMd } from "./markdown/markdown-pdf";
 import { Global } from "@/common/global";
+const { formatMarkdown } = require("./markdownFormatter");
 
 export type ExportType = 'pdf' | 'html' | 'docx';
 
@@ -129,6 +130,30 @@ export class MarkdownService {
                 vscode.commands.executeCommand("editor.action.clipboardPasteAction")
             }
         })
+    }
+
+    public async format(uri?: vscode.Uri) {
+        let document = vscode.window.activeTextEditor?.document || Holder.activeDocument;
+        if (uri) {
+            document = await vscode.workspace.openTextDocument(uri);
+        }
+        if (!document || document.isClosed) return;
+
+        await this.formatDocument(document);
+    }
+
+    public async formatDocument(document: vscode.TextDocument, source = document.getText()) {
+        const formatted = formatMarkdown(source);
+        if (formatted === source) {
+            vscode.window.showInformationMessage("Markdown already follows the formatting rules.");
+            return source;
+        }
+
+        const edit = new vscode.WorkspaceEdit();
+        edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), formatted);
+        await vscode.workspace.applyEdit(edit);
+        vscode.window.showInformationMessage("Formatted Markdown headings.");
+        return formatted;
     }
 
     public static async imgExtGuide(absPath: string, relPath: string) {

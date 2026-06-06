@@ -72,6 +72,15 @@ export async function getToolbar(resPath) {
         "|",
         {
             tipPosition: 's',
+            tip: 'Format Markdown',
+            icon: await loadRes(`${resPath}/icon/format.svg`),
+            click() {
+                handler.emit("format")
+            }
+        },
+        "|",
+        {
+            tipPosition: 's',
             tip: `Edit In VSCode (${shortcutTip})`,
             className: 'right',
             icon: await loadRes(`${resPath}/icon/vscode.svg`),

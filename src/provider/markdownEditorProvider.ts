@@ -50,6 +50,7 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
 
         const uri = document.uri;
         const webview = handler.panel.webview;
+        const markdownService = new MarkdownService(this.context);
 
         let content = document.getText();
         const contextPath = `${this.extensionPath}/resource/vditor`;
@@ -107,6 +108,12 @@ export class MarkdownEditorProvider implements vscode.CustomTextEditorProvider {
             vscode.commands.executeCommand("editor.action.clipboardPasteAction")
         }).on("quickOpen", () => {
             vscode.commands.executeCommand('workbench.action.quickOpen');
+        }).on("format", async () => {
+            const formatted = await markdownService.formatDocument(document, content);
+            if (formatted === content) return;
+            content = formatted;
+            this.updateCount(content);
+            handler.emit("update", formatted);
         }).on("editInVSCode", (full: boolean) => {
             const side = full ? vscode.ViewColumn.Active : vscode.ViewColumn.Beside;
             vscode.commands.executeCommand('vscode.openWith', uri, "default", side);
