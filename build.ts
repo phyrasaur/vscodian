@@ -1,4 +1,4 @@
-const { build } = require("esbuild")
+const { build, context } = require("esbuild")
 const { resolve } = require("path")
 const { existsSync } = require("fs")
 const { copy } = require("esbuild-plugin-copy")
@@ -6,8 +6,8 @@ const isProd = process.argv.indexOf('--mode=production') >= 0;
 
 const dependencies = ['vscode-html-to-docx', 'highlight.js', 'pdf-lib', 'cheerio', 'katex', 'mustache', 'puppeteer-core']
 
-function main() {
-    build({
+async function main() {
+    const options = {
         entryPoints: ['./src/extension.ts'],
         bundle: true,
         outfile: "out/extension.js",
@@ -18,7 +18,6 @@ function main() {
         metafile: true,
         // sourceRoot: __dirname+"/src",
         minify: isProd,
-        watch: !isProd,
         sourcemap: !isProd,
         logOverride: {
             'duplicate-object-key': "silent",
@@ -54,10 +53,18 @@ function main() {
                 }
             },
         ],
-    })
+    }
+
+    if (isProd) {
+        await build(options)
+        return
+    }
+
+    const buildContext = await context(options)
+    await buildContext.watch()
 }
 
-function createLib() {
+async function createLib() {
     const points = dependencies.reduce((point, dependency) => {
         const main = require(`./node_modules/${dependency}/package.json`).main ?? "index.js";
         const mainAbsPath = resolve(`./node_modules/${dependency}`, main);
@@ -66,7 +73,7 @@ function createLib() {
         }
         return point;
     }, {})
-    build({
+    await build({
         entryPoints: points,
         bundle: true,
         outdir: "out/node_modules",
@@ -78,5 +85,7 @@ function createLib() {
     })
 }
 
-createLib();
-main();
+Promise.all([createLib(), main()]).catch(error => {
+    console.error(error)
+    process.exitCode = 1
+});

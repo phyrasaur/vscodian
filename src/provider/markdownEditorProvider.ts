@@ -1,4 +1,4 @@
-import { adjustImgPath, getWorkspacePath, writeFile } from '@/common/fileUtil';
+import { adjustImgPath, getWorkspacePath } from '@/common/fileUtil';
 import { readFileSync, writeFileSync } from 'fs';
 import { basename, isAbsolute, parse, resolve } from 'path';
 import * as vscode from 'vscode';

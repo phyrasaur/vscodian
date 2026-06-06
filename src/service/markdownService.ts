@@ -2,8 +2,7 @@ import { adjustImgPath } from "@/common/fileUtil";
 import { Output } from "@/common/Output";
 import { spawn } from 'child_process';
 import chromeFinder from 'chrome-finder';
-import { fileTypeFromFile } from 'file-type';
-import { copyFileSync, existsSync, lstatSync, mkdirSync, renameSync } from 'fs';
+import { copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync, renameSync } from 'fs';
 import { homedir } from 'os';
 import path, { dirname, extname, isAbsolute, join, parse } from 'path';
 import * as vscode from 'vscode';
@@ -134,12 +133,31 @@ export class MarkdownService {
 
     public static async imgExtGuide(absPath: string, relPath: string) {
         const oldExt = extname(absPath)
-        const { ext = "png" } = (await fileTypeFromFile(absPath)) ?? {};
+        const ext = MarkdownService.detectImageExtension(absPath) ?? "png";
         if (oldExt != `.${ext}`) {
             relPath = relPath.replace(oldExt, `.${ext}`)
             renameSync(absPath, absPath.replace(oldExt, `.${ext}`))
         }
         return relPath
+    }
+
+    private static detectImageExtension(filePath: string): string | undefined {
+        const bytes = readFileSync(filePath).subarray(0, 16);
+        const startsWith = (...signature: number[]) =>
+            signature.every((value, index) => bytes[index] === value);
+
+        if (startsWith(0x89, 0x50, 0x4e, 0x47)) return "png";
+        if (startsWith(0xff, 0xd8, 0xff)) return "jpg";
+        if (startsWith(0x47, 0x49, 0x46, 0x38)) return "gif";
+        if (startsWith(0x42, 0x4d)) return "bmp";
+        if (startsWith(0x49, 0x49, 0x2a, 0x00) || startsWith(0x4d, 0x4d, 0x00, 0x2a)) return "tif";
+        if (startsWith(0x00, 0x00, 0x01, 0x00)) return "ico";
+
+        const container = bytes.subarray(0, 12).toString("ascii");
+        if (container.startsWith("RIFF") && container.endsWith("WEBP")) return "webp";
+        if (container.slice(4, 8) === "ftyp" && container.includes("avif")) return "avif";
+
+        return undefined;
     }
 
     /**

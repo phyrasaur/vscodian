@@ -9,7 +9,23 @@ const markdownItPlantuml = require("markdown-it-plantuml")
 const markdownItToc = require("markdown-it-toc-done-right")
 const markdownItAnchor = require("markdown-it-anchor")
 const { exportByType } = require('./html-export')
-const markdownItMermaid = require('markdown-it-mermaid').default;
+
+function markdownItMermaid(md) {
+  const defaultFence = md.renderer.rules.fence.bind(md.renderer.rules)
+  md.renderer.rules.fence = (tokens, idx, options, env, self) => {
+    const token = tokens[idx]
+    const code = token.content.trim()
+    const firstLine = code.split(/\n/, 1)[0].trim()
+    const isMermaid = token.info.trim() === "mermaid"
+      || firstLine === "gantt"
+      || firstLine === "sequenceDiagram"
+      || /^graph (?:TB|BT|RL|LR|TD);?$/.test(firstLine)
+
+    return isMermaid
+      ? `<div class="mermaid">${md.utils.escapeHtml(code)}</div>`
+      : defaultFence(tokens, idx, options, env, self)
+  }
+}
 
 async function convertMarkdown(inputMarkdownFile, config) {
 
@@ -24,8 +40,8 @@ async function convertMarkdown(inputMarkdownFile, config) {
   const containsMermaid = $('.mermaid').length > 0;
   if (containsMermaid) {
       const mermaidScript = `
-    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-    <script>mermaid.initialize({startOnLoad:true});</script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.min.js"></script>
+    <script>mermaid.initialize({startOnLoad:true, securityLevel:'strict'});</script>
     `;
 
     $('body').append(mermaidScript);
