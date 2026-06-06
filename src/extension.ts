@@ -21,6 +21,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(
 		vscode.commands.registerCommand('office.quickOpen', () => vscode.commands.executeCommand('workbench.action.quickOpen')),
 		vscode.commands.registerCommand('office.markdown.switch', (uri) => { markdownService.switchEditor(uri) }),
+		vscode.commands.registerCommand('office.markdown.format', (uri) => markdownService.format(uri)),
 		vscode.commands.registerCommand('office.markdown.paste', () => { markdownService.loadClipboardImage() }),
 		vscode.commands.registerCommand('office.html.preview', uri => HtmlService.previewHtml(uri, context)),
 		vscode.workspace.registerTextDocumentContentProvider('decompile_java', new JavaDecompilerProvider()),
